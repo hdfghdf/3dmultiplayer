@@ -1,4 +1,4 @@
-
+let nameTags = {};
 const socket = io();
 
 let scene, camera, renderer, myCube;
@@ -92,3 +92,54 @@ function animate() {
   requestAnimationFrame(animate);
   renderer.render(scene, camera);
 }
+
+function addOtherPlayer(id, position) {
+  // Create a 3D cube for the player
+  const cubeGeo = new THREE.BoxGeometry(1, 1, 1);
+  const cubeMat = new THREE.MeshStandardMaterial({ color: 0xff0000 });
+  const cube = new THREE.Mesh(cubeGeo, cubeMat);
+  cube.position.set(position.x, position.y, position.z);
+  players[id] = cube;
+  scene.add(cube);
+
+  // Create the name tag for the player
+  const nameTag = document.createElement('div');
+  nameTag.className = 'name-tag';
+  nameTag.textContent = "Player " + id; // Default name
+  document.body.appendChild(nameTag);
+
+  nameTags[id] = { tag: nameTag, position: position }; // Store name tag and position
+
+  // Make name tag editable on click
+  nameTag.addEventListener('click', () => {
+    const newName = prompt("Enter your new name:", nameTag.textContent);
+    if (newName) {
+      nameTag.textContent = newName;
+    }
+  });
+}
+
+function animate() {
+  requestAnimationFrame(animate);
+
+  // Update name tag positions based on player cubes
+  for (let id in players) {
+    const player = players[id];
+    const nameTag = nameTags[id].tag;
+    
+    // Position the name tag above the cube
+    const screenPosition = player.position.clone().project(camera);
+    const x = (screenPosition.x * 0.5 + 0.5) * window.innerWidth;
+    const y = -(screenPosition.y * 0.5 + 0.5) * window.innerHeight;
+    nameTag.style.left = `${x}px`;
+    nameTag.style.top = `${y}px`;
+  }
+
+  renderer.render(scene, camera);
+}
+
+socket.on("updateName", ({ id, name }) => {
+  if (nameTags[id]) {
+    nameTags[id].tag.textContent = name;
+  }
+});

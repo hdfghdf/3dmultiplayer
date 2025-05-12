@@ -37,4 +37,8 @@ io.on("connection", (socket) => {
   });
 });
 
+socket.on("changeName", (newName) => {
+  io.emit("updateName", { id: socket.id, name: newName });
+});
+
 server.listen(3000, () => console.log("Server running on http://localhost:3000"));
